@@ -83,6 +83,17 @@ def fetch_arxiv_records(start_date: date, end_date: date, categories: list = Non
             # Extract setSpecs from header
             set_specs = [s.text for s in header.findall('oai:setSpec', namespaces)]
 
+            def clean_category(set_spec):
+                parts = set_spec.split(':')
+                if len(parts) == 3:
+                    return f"{parts[1]}.{parts[2]}"
+                elif len(parts) == 2:
+                    return parts[1]
+                else:
+                    return set_spec
+
+            categories_cleaned = sorted(list(set(clean_category(s) for s in set_specs)))
+
             metadata_block = record.find('.//oai_dc:dc', namespaces)
             if metadata_block is None:
                 continue
@@ -121,6 +132,7 @@ def fetch_arxiv_records(start_date: date, end_date: date, categories: list = Non
                 'title': get_first('title'),
                 'creators': get_text_list(metadata_block, 'creator', namespaces),
                 'subjects': subjects,
+                'categories': categories_cleaned,
                 'description': get_first('description'),
                 'date': get_first('date'),
                 'identifier': get_first('identifier'),
