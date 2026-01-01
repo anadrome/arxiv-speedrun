@@ -71,6 +71,9 @@ def fetch_arxiv_records(start_date: date, end_date: date, categories: list = Non
 
     all_records = []
     session = requests.Session()
+    session.headers.update({
+        "User-Agent": "ArxivSpeedrun/1.0 (+https://github.com/anadrome/arxiv-speedrun/)"
+    })
 
     total_processed = 0
     max_retries = 3
