@@ -60,12 +60,12 @@
             background: transparent;
         }
         .btn:active { transform: translateY(1px); }
-        
+
         .btn-lg {
             padding: 0.75rem 1.5rem;
             font-size: 1.25rem;
         }
-        
+
         .btn-sm {
             padding: 0.25rem 0.5rem;
             font-size: 0.875rem;
@@ -76,7 +76,7 @@
             color: var(--accent-color);
             border-color: var(--accent-color);
         }
-        .btn-primary:hover { 
+        .btn-primary:hover {
             background-color: var(--accent-color);
             color: white;
         }
@@ -278,16 +278,16 @@
     <div id="setup-screen">
         <h2 class="text-center">arXiv AI/ML Catch-Up</h2>
         <p class="text-center text-muted">Was your New Year's resolution to keep up with arXiv <a href="https://arxiv.org/list/cs.AI/recent">AI</a>/<a href="https://arxiv.org/list/cs.LG/recent">ML</a> preprints? Browse the past week's new uploads in 30 mins:</p>
-        
+
         <div id="loading-status" class="status-box">Loading papers...</div>
-        
+
         <div id="setup-form" class="hidden">
             <input type="hidden" id="minutes-input" value="30">
 
             <div id="start-container" class="text-center">
                 <button id="start-btn" class="btn btn-primary btn-lg w-100" style="font-size: 2.5rem; font-weight: 800; letter-spacing: -1px;">GO</button>
             </div>
-            
+
             <div id="resume-container" class="hidden text-center d-grid">
                 <button id="resume-btn" class="btn btn-primary btn-lg w-100">Resume Session</button>
                 <button id="clear-btn" class="btn btn-danger btn-sm w-100" style="margin-top: 0.5rem">Clear Progress</button>
@@ -301,8 +301,8 @@
                         <div>Some do!</div>
                     </div>
                     <div>
-                        <div class="fw-bold">Is this a joke?</div>
-                        <div>It started as 90% joke.</div>
+                        <div class="fw-bold">Is this a joke or real paper-reading tool?</div>
+                        <div>Well, it started as a joke.</div>
                     </div>
                     <div>
                         <div class="fw-bold">Who made this?</div>
@@ -322,7 +322,7 @@
         <div class="paper-container">
             <div class="paper-card" id="paper-display">
                 <div class="paper-title" id="display-title"></div>
-                
+
                 <div class="paper-meta">
                     <div class="paper-authors" id="display-authors"></div>
                     <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -374,7 +374,7 @@
         const setupForm = document.getElementById('setup-form');
         const minutesInput = document.getElementById('minutes-input');
         const paperCounterEl = document.getElementById('paper-counter');
-        
+
         const startContainer = document.getElementById('start-container');
         const resumeContainer = document.getElementById('resume-container');
         const resumeBtn = document.getElementById('resume-btn');
@@ -383,14 +383,14 @@
             .then(r => r.json())
             .then(data => {
                 allPapers = data;
-                papers = filterPapers(); 
-                
+                papers = filterPapers();
+
                 if (papers.length > 0) {
                     const avgTime = (1800 / papers.length).toFixed(1);
                     document.getElementById('faq-time-per-paper').textContent = `Don't preprints deserve more than ${avgTime} seconds each?`;
 
                     const dates = papers.map(p => p.date).sort().reverse();
-                    datasetVersion = dates[0]; 
+                    datasetVersion = dates[0];
                 }
 
                 loadingStatus.style.display = 'none';
@@ -406,7 +406,7 @@
         function checkProgress() {
             try {
                 const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-                
+
                 if (saved && saved.version === datasetVersion && papers.length > 0 && saved.index < papers.length) {
                     startContainer.classList.add('hidden');
                     resumeContainer.classList.remove('hidden');
@@ -483,7 +483,7 @@
 
             setupScreen.style.display = 'none';
             viewerScreen.style.display = 'flex';
-            
+
             showPaper(currentIndex);
             startTimer();
         }
@@ -509,7 +509,7 @@
                 exit();
                 return;
             }
-            
+
             currentIndex = index;
             furthestIndexReached = Math.max(furthestIndexReached, currentIndex);
 
@@ -520,9 +520,9 @@
             updatePauseButton(isPaused);
 
             const paper = papers[currentIndex];
-            
+
             document.getElementById('display-title').innerHTML = paper.title;
-            
+
             const formattedAuthors = paper.creators.map(author => {
                 if (author.includes(',')) {
                     const [surname, firstname] = author.split(',').map(s => s.trim());
@@ -549,7 +549,7 @@
             document.getElementById('display-authors').textContent = authorsText;
             document.getElementById('display-abstract').innerHTML = paper.description;
             document.getElementById('display-date').textContent = paper.date;
-            
+
             const updatedEl = document.getElementById('display-updated');
             updatedEl.textContent = '';
 
@@ -559,19 +559,19 @@
             } else {
                 catsEl.textContent = '';
             }
-            
+
             document.getElementById('display-link').href = paper.identifier;
-            
+
             paperCounterEl.textContent = `${currentIndex + 1}/${papers.length}`;
-            
+
             if (lastDisplayedIndex !== currentIndex) {
                 const drift = timeRemainingInPaper < 0 ? timeRemainingInPaper : 0;
                 timeRemainingInPaper = secondsPerPaper + drift;
                 lastDisplayedIndex = currentIndex;
             }
-            
+
             document.querySelector('.paper-container').scrollTop = 0;
-            
+
             updateUI();
         }
 
@@ -588,7 +588,7 @@
                 if (timeRemainingInPaper <= -0.01) {
                     showPaper(currentIndex + 1);
                 }
-                
+
                 if (totalTimeRemaining <= 0) {
                     clearInterval(intervalId);
                     clearProgress();
@@ -602,10 +602,10 @@
             let paperProgress = ((secondsPerPaper - timeRemainingInPaper) / secondsPerPaper) * 100;
             paperProgress = Math.min(paperProgress, 100);
             document.getElementById('progress-bar').style.width = paperProgress + '%';
-            
+
             const m = Math.max(0, Math.floor(totalTimeRemaining / 60));
             const s = Math.max(0, Math.floor(totalTimeRemaining % 60));
-            document.getElementById('timer-countdown').textContent = 
+            document.getElementById('timer-countdown').textContent =
                 `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }
 
@@ -654,7 +654,7 @@
             clearInterval(intervalId);
             viewerScreen.style.display = 'none';
             setupScreen.style.display = 'block';
-            checkProgress(); 
+            checkProgress();
         }
     </script>
 </body>
