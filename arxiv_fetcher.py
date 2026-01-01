@@ -4,10 +4,41 @@ from datetime import date, timedelta, datetime, timezone
 import time
 import json
 import os
+import re
+import latex2mathml.converter
 
 def get_text_list(metadata_block, element_name, namespaces):
     """Helper to extract text from all matching elements."""
     return [el.text for el in metadata_block.findall(f'dc:{element_name}', namespaces) if el.text]
+
+def convert_latex_to_mathml(text):
+    r"""
+    Finds LaTeX math patterns in text ($...$ or \(...\)) and converts them to MathML.
+    Returns the text with MathML replacements.
+    """
+    if not text:
+        return text
+
+    def replacer(match):
+        latex_content = match.group(1)
+        try:
+            # latex2mathml produces <math ...>...</math>
+            return latex2mathml.converter.convert(latex_content)
+        except Exception:
+            # If conversion fails, return original matched string
+            return match.group(0)
+
+    # Pattern 1: $ ... $
+    # Matches $...$ but not \$... or ...\$
+    p1 = r'(?<!\\)\$(.*?)(?<!\\)\$'
+    text = re.sub(p1, replacer, text, flags=re.DOTALL)
+
+    # Pattern 2: \( ... \)
+    # Matches \(...\)
+    p2 = r'\\\((.*?)\\\)'
+    text = re.sub(p2, replacer, text, flags=re.DOTALL)
+
+    return text
 
 def fetch_arxiv_records(start_date: date, end_date: date, categories: list = None):
     """
@@ -129,12 +160,15 @@ def fetch_arxiv_records(start_date: date, end_date: date, categories: list = Non
                 vals = get_text_list(metadata_block, key, namespaces)
                 return vals[0] if vals else default
 
+            raw_title = get_first('title')
+            raw_desc = get_first('description')
+
             record_data = {
-                'title': get_first('title'),
+                'title': convert_latex_to_mathml(raw_title),
                 'creators': get_text_list(metadata_block, 'creator', namespaces),
                 'subjects': subjects,
                 'categories': categories_cleaned,
-                'description': get_first('description'),
+                'description': convert_latex_to_mathml(raw_desc),
                 'date': get_first('date'),
                 'announcement_date': datestamp,
                 'identifier': get_first('identifier'),

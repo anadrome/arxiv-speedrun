@@ -3,15 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>arXiv Catch-Up</title>
-    <script>
-        window.MathJax = {
-            tex: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']]
-            }
-        };
-    </script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <title>arXiv AI/ML Catch-Up</title>
     <style>
         :root {
             --bg-color: #f4f4f5;
@@ -284,7 +276,7 @@
 
     <!-- Setup Screen -->
     <div id="setup-screen">
-        <h2 class="text-center">arXiv Catch-Up</h2>
+        <h2 class="text-center">arXiv AI/ML Catch-Up</h2>
         <p class="text-center text-muted">Was your New Year's resolution to keep up with arXiv <a href="https://arxiv.org/list/cs.AI/recent">AI</a>/<a href="https://arxiv.org/list/cs.LG/recent">ML</a> preprints? Browse the past week's new uploads in 30 mins:</p>
         
         <div id="loading-status" class="status-box">Loading papers...</div>
@@ -529,7 +521,7 @@
 
             const paper = papers[currentIndex];
             
-            document.getElementById('display-title').textContent = paper.title;
+            document.getElementById('display-title').innerHTML = paper.title;
             
             const formattedAuthors = paper.creators.map(author => {
                 if (author.includes(',')) {
@@ -555,7 +547,7 @@
                 }
             }
             document.getElementById('display-authors').textContent = authorsText;
-            document.getElementById('display-abstract').textContent = paper.description;
+            document.getElementById('display-abstract').innerHTML = paper.description;
             document.getElementById('display-date').textContent = paper.date;
             
             const updatedEl = document.getElementById('display-updated');
@@ -579,13 +571,6 @@
             }
             
             document.querySelector('.paper-container').scrollTop = 0;
-
-            if (window.MathJax) {
-                MathJax.typesetPromise([
-                    document.getElementById('display-title'),
-                    document.getElementById('display-abstract')
-                ]).catch(err => console.log('MathJax error:', err));
-            }
             
             updateUI();
         }
