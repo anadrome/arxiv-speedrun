@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 from datetime import date, timedelta, datetime, timezone
 import time
 import json
+import os
 
 def get_text_list(metadata_block, element_name, namespaces):
     """Helper to extract text from all matching elements."""
@@ -135,15 +136,9 @@ def fetch_arxiv_records(start_date: date, end_date: date, categories: list = Non
                 'categories': categories_cleaned,
                 'description': get_first('description'),
                 'date': get_first('date'),
+                'announcement_date': datestamp,
                 'identifier': get_first('identifier'),
             }
-
-            # Filter out papers that are only updated (not newly published) in
-            # the request window. But allow a buffer of 5 days to account for
-            # submission-to-announcement lag.
-            cutoff_date = (start_date - timedelta(days=5)).strftime('%Y-%m-%d')
-            if record_data['date'] < cutoff_date:
-                continue
 
             all_records.append(record_data)
 
@@ -162,19 +157,71 @@ def fetch_arxiv_records(start_date: date, end_date: date, categories: list = Non
 
 if __name__ == "__main__":
     target_categories = ["cs.AI", "cs.LG"]
+    output_file = "arxiv_recent_csAILG.json"
     today = datetime.now(timezone.utc).date()
-    week_ago = today - timedelta(days=7)
-    
+    RETENTION_DAYS = 14
+
+    existing_articles = []
+    start_date = today - timedelta(days=RETENTION_DAYS)
+
+    prune_date = today - timedelta(days=RETENTION_DAYS)
+    prune_date_str = prune_date.strftime('%Y-%m-%d')
+
+    if os.path.exists(output_file):
+        print(f"Found existing data in '{output_file}'.")
+        try:
+            with open(output_file, "r", encoding="utf-8") as f:
+                existing_articles = json.load(f)
+
+            if existing_articles:
+                latest_entry = max(existing_articles, key=lambda x: x.get('announcement_date', ''))
+
+                latest_date_str = latest_entry.get('announcement_date')
+                if latest_date_str:
+                    try:
+                        last_date = date.fromisoformat(latest_date_str)
+                        start_date = last_date
+                        print(f"Latest article date found: {start_date}")
+                    except ValueError:
+                        pass
+        except Exception as e:
+            print(f"Error reading existing file: {e}. Starting fresh.")
+            existing_articles = []
+
     print(f"Configuration:")
     print(f"  Categories: {target_categories}")
-    print(f"  Period:     {week_ago} to {today}")
-    
-    articles = fetch_arxiv_records(week_ago, today, categories=target_categories)
-    
-    if articles:
-        output_file = "arxiv_recent_csAILG.json"
+    print(f"  Period:     {start_date} to {today}")
+    print(f"  Retention:  {RETENTION_DAYS} days (older than {prune_date_str} will be removed)")
+
+    if start_date > today:
+        start_date = today
+
+    new_articles = fetch_arxiv_records(start_date, today, categories=target_categories)
+
+    # merge, deduplicate, and prune
+    if new_articles or existing_articles:
+        if new_articles:
+            print(f"Fetched {len(new_articles)} new records.")
+        articles_map = {a['identifier']: a for a in existing_articles}
+        for a in new_articles:
+            articles_map[a['identifier']] = a
+        all_articles = list(articles_map.values())
+
+        filtered_articles = []
+        for a in all_articles:
+            a_date_str = a.get('date')
+            if a_date_str and a_date_str >= prune_date_str:
+                filtered_articles.append(a)
+
+        # sort by publication date descending
+        filtered_articles.sort(key=lambda x: x.get('date', ''), reverse=True)
+
+        removed_count = len(all_articles) - len(filtered_articles)
+        if removed_count > 0:
+            print(f"Pruned {removed_count} articles older than {prune_date_str}.")
+
         with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(articles, f, indent=2, ensure_ascii=False)
-        print(f"Saved results to '{output_file}'.")
+            json.dump(filtered_articles, f, indent=2, ensure_ascii=False)
+        print(f"Saved {len(filtered_articles)} total results to '{output_file}'.")
     else:
-        print(f"No articles found.")
+        print("No articles found (new or existing).")

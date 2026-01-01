@@ -451,24 +451,18 @@
         function filterPapers() {
             if (allPapers.length === 0) return [];
 
-            let maxTime = 0;
-            allPapers.forEach(p => {
-                const t = new Date(p.date).getTime();
-                if (!isNaN(t) && t > maxTime) maxTime = t;
-            });
+            // Since the backend sorts by descending date, first item is the newest
+            const latestDateStr = allPapers[0].date;
+            const maxTime = new Date(latestDateStr).getTime();
 
-            if (maxTime === 0) return allPapers;
+            if (isNaN(maxTime)) return allPapers;
 
             const oneDay = 24 * 60 * 60 * 1000;
             const startTime = maxTime - (6 * oneDay);
             const startStr = new Date(startTime).toISOString().split('T')[0];
 
-            return allPapers
-                .filter(p => {
-                    if (!p.date || p.date < startStr) return false;
-                    return true;
-                })
-                .sort((a, b) => b.date.localeCompare(a.date));
+            return allPapers.filter(p => p.date && p.date >= startStr);
+            // No need to sort again as backend already did it
         }
 
         function initSession(isResume) {
