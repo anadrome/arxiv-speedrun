@@ -1,6 +1,6 @@
 import requests
 import xml.etree.ElementTree as ET
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone
 import time
 import json
 
@@ -162,7 +162,7 @@ def fetch_arxiv_records(start_date: date, end_date: date, categories: list = Non
 
 if __name__ == "__main__":
     target_categories = ["cs.AI", "cs.LG"]
-    today = date.today()
+    today = datetime.now(timezone.utc).date()
     week_ago = today - timedelta(days=7)
     
     print(f"Configuration:")
