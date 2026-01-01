@@ -123,12 +123,14 @@ def fetch_arxiv_records(start_date: date, end_date: date, categories: list = Non
                 'subjects': subjects,
                 'description': get_first('description'),
                 'date': get_first('date'),
-                'updated_date': datestamp,
                 'identifier': get_first('identifier'),
             }
 
-            # Filter out old papers (only keep those published within the requested window)
-            if record_data['date'] < start_str:
+            # Filter out papers that are only updated (not newly published) in
+            # the request window. But allow a buffer of 5 days to account for
+            # submission-to-announcement lag.
+            cutoff_date = (start_date - timedelta(days=5)).strftime('%Y-%m-%d')
+            if record_data['date'] < cutoff_date:
                 continue
 
             all_records.append(record_data)

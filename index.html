@@ -395,7 +395,7 @@
                     const avgTime = (1800 / papers.length).toFixed(1);
                     document.getElementById('faq-time-per-paper').textContent = `Don't preprints deserve more than ${avgTime} seconds each?`;
 
-                    const dates = papers.map(p => p.updated_date).sort().reverse();
+                    const dates = papers.map(p => p.date).sort().reverse();
                     datasetVersion = dates[0]; 
                 }
 
@@ -450,7 +450,7 @@
 
             let maxTime = 0;
             allPapers.forEach(p => {
-                const t = new Date(p.updated_date).getTime();
+                const t = new Date(p.date).getTime();
                 if (!isNaN(t) && t > maxTime) maxTime = t;
             });
 
@@ -460,10 +460,12 @@
             const startTime = maxTime - (6 * oneDay);
             const startStr = new Date(startTime).toISOString().split('T')[0];
 
-            return allPapers.filter(p => {
-                if (!p.date || p.date < startStr) return false;
-                return true;
-            });
+            return allPapers
+                .filter(p => {
+                    if (!p.date || p.date < startStr) return false;
+                    return true;
+                })
+                .sort((a, b) => b.date.localeCompare(a.date));
         }
 
         function initSession(isResume) {
@@ -552,17 +554,6 @@
             const updatedEl = document.getElementById('display-updated');
             updatedEl.textContent = '';
             
-            if (paper.date && paper.updated_date) {
-                const pubDate = new Date(paper.date);
-                const upDate = new Date(paper.updated_date);
-                const diffTime = Math.abs(upDate - pubDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                
-                if (diffDays > 4) {
-                    updatedEl.textContent = `(Updated: ${paper.updated_date})`;
-                }
-            }
-
             document.getElementById('display-link').href = paper.identifier;
             
             paperCounterEl.textContent = `${currentIndex + 1}/${papers.length}`;
