@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>arXiv Catch-Up</title>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f4f5;
+            --surface-color: #ffffff;
+                    --text-primary: #18181b;
+                    --text-secondary: #52525b;
+                    --accent-color: #000000;
+                    --accent-hover: #27272a;
+                    --danger-color: #ef4444;            --border-color: #e4e4e7;
+            --radius-lg: 12px;
+            --radius-md: 8px;
+            --radius-sm: 4px;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --font-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-stack);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Typography */
+        h1, h2, h3 { margin-top: 0; line-height: 1.2; }
+        p { line-height: 1.6; }
+        .text-center { text-align: center; }
+        .text-muted { color: var(--text-secondary); }
+        .small { font-size: 0.875rem; }
+        .fw-bold { font-weight: 600; }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border: 1px solid transparent;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            background: transparent;
+        }
+        .btn:active { transform: translateY(1px); }
+        
+        .btn-lg {
+            padding: 0.75rem 1.5rem;
+            font-size: 1.25rem;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background-color: white;
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        .btn-primary:hover { 
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-success {
+            background-color: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+        .btn-success:hover { background-color: #059669; }
+
+        .btn-outline {
+            border-color: var(--border-color);
+            color: var(--text-primary);
+            background: white;
+        }
+        .btn-outline:hover { background-color: var(--bg-color); }
+
+        .btn-danger {
+            color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        .btn-danger:hover { background-color: #fef2f2; }
+
+        .btn-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            border: 1px solid var(--border-color);
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+        }
+        .btn-link:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .w-100 { width: 100%; }
+        .d-grid { display: grid; gap: 0.5rem; }
+
+        /* Screens */
+        #setup-screen {
+            max-width: 480px;
+            width: 90%;
+            margin: auto;
+            padding: 2.5rem;
+            background: var(--surface-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+        }
+
+        #viewer-screen {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Status & Alerts */
+        .status-box {
+            background: #eff6ff;
+            color: #1e40af;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        .status-error {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        /* Paper Card */
+        .paper-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .paper-card {
+            background: var(--surface-color);
+            border-radius: var(--radius-lg);
+            padding: 3rem;
+            box-shadow: var(--shadow-lg);
+            max-width: 800px;
+            width: 100%;
+            height: fit-content;
+            margin-bottom: 5rem; /* Space for controls */
+            border: 1px solid var(--border-color);
+        }
+
+        .paper-title {
+            color: var(--text-primary);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .paper-meta {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .paper-authors {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #eff6ff;
+            color: var(--accent-color);
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .paper-abstract {
+            font-size: 1.125rem;
+            color: #3f3f46;
+            line-height: 1.7;
+        }
+
+        /* Controls */
+        .controls-wrapper {
+            position: absolute;
+            bottom: 2rem;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            pointer-events: none; /* Let clicks pass through to sides if needed */
+        }
+
+        .controls {
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            padding: 0.75rem 1.5rem;
+            border-radius: 99px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .timer-display {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-weight: 600;
+            color: var(--text-secondary);
+            min-width: 120px;
+            text-align: center;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: #e4e4e7;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+        #progress-bar {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* FAQ Section */
+        details {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+        summary { cursor: pointer; font-size: 0.9rem; }
+        .faq-content { margin-top: 1rem; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.75rem; }
+
+        /* Utility */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Setup Screen -->
+    <div id="setup-screen">
+        <h2 class="text-center">arXiv Catch-Up</h2>
+        <p class="text-center text-muted">Was your New Year's resolution to keep up with arXiv <a href="https://arxiv.org/list/cs.AI/recent">AI</a>/<a href="https://arxiv.org/list/cs.LG/recent">ML</a> preprints? Browse the past week's new uploads in 30 mins:</p>
+        
+        <div id="loading-status" class="status-box">Loading papers...</div>
+        
+        <div id="setup-form" class="hidden">
+            <input type="hidden" id="minutes-input" value="30">
+
+            <div id="start-container" class="text-center">
+                <button id="start-btn" class="btn btn-primary btn-lg w-100" style="font-size: 2.5rem; font-weight: 800; letter-spacing: -1px;">GO</button>
+            </div>
+            
+            <div id="resume-container" class="hidden text-center d-grid">
+                <button id="resume-btn" class="btn btn-primary btn-lg w-100">Resume Session</button>
+                <button id="clear-btn" class="btn btn-danger btn-sm w-100" style="margin-top: 0.5rem">Clear Progress</button>
+            </div>
+
+            <details>
+                <summary>FAQ</summary>
+                <div class="faq-content">
+                    <div>
+                        <div class="fw-bold" id="faq-time-per-paper">Don't preprints deserve more than 2.7 seconds each?</div>
+                        <div>Some do!</div>
+                    </div>
+                    <div>
+                        <div class="fw-bold">Is this a joke?</div>
+                        <div>It started as 90% joke.</div>
+                    </div>
+                    <div>
+                        <div class="fw-bold">Who made this?</div>
+                        <div>You can blame <a href="https://www.kmjn.org/">me</a>.</div>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <!-- Viewer Screen -->
+    <div id="viewer-screen">
+        <div class="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+
+        <div class="paper-container">
+            <div class="paper-card" id="paper-display">
+                <div class="paper-title" id="display-title"></div>
+                
+                <div class="paper-meta">
+                    <div class="paper-authors" id="display-authors"></div>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <span class="badge" id="display-date"></span>
+                            <span class="text-muted small" id="display-updated"></span>
+                        </div>
+                        <a id="display-link" href="#" target="_blank" class="btn-link">View on arXiv</a>
+                    </div>
+                </div>
+
+                <div class="paper-abstract" id="display-abstract"></div>
+            </div>
+        </div>
+
+        <div class="controls-wrapper">
+            <div class="controls">
+                <button id="prev-btn" class="btn btn-outline">⏮</button>
+                <button id="pause-btn" class="btn btn-primary">Pause</button>
+                <button id="next-btn" class="btn btn-outline">⏭</button>
+                <div class="timer-display">
+                    <span id="paper-counter">0/0</span>
+                    <span style="margin: 0 5px; opacity: 0.3;">|</span>
+                    <span id="timer-countdown">00:00</span>
+                </div>
+                <button id="exit-btn" class="btn btn-sm btn-danger">Exit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'arxiv_speedrun_progress';
+        let allPapers = [];
+        let papers = [];
+        let currentIndex = 0;
+        let isPaused = false;
+        let intervalId = null;
+        let secondsPerPaper = 5;
+        let timeRemainingInPaper = 0;
+        let totalTimeRemaining = 0;
+        let datasetVersion = '';
+        let lastDisplayedIndex = -1;
+
+        const setupScreen = document.getElementById('setup-screen');
+        const viewerScreen = document.getElementById('viewer-screen');
+        const loadingStatus = document.getElementById('loading-status');
+        const setupForm = document.getElementById('setup-form');
+        const minutesInput = document.getElementById('minutes-input');
+        const paperCounterEl = document.getElementById('paper-counter');
+        
+        const startContainer = document.getElementById('start-container');
+        const resumeContainer = document.getElementById('resume-container');
+        const resumeBtn = document.getElementById('resume-btn');
+
+        fetch('arxiv_recent_csAILG.json')
+            .then(r => r.json())
+            .then(data => {
+                allPapers = data;
+                papers = filterPapers(); 
+                
+                if (papers.length > 0) {
+                    const avgTime = (1800 / papers.length).toFixed(1);
+                    document.getElementById('faq-time-per-paper').textContent = `Don't preprints deserve more than ${avgTime} seconds each?`;
+
+                    const dates = papers.map(p => p.updated_date).sort().reverse();
+                    datasetVersion = dates[0]; 
+                }
+
+                loadingStatus.style.display = 'none';
+                setupForm.classList.remove('hidden');
+                checkProgress();
+            })
+            .catch(err => {
+                loadingStatus.className = 'status-box status-error';
+                loadingStatus.textContent = 'Failed to load papers';
+                console.error(err);
+            });
+
+        function checkProgress() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                
+                if (saved && saved.version === datasetVersion && papers.length > 0 && saved.index < papers.length) {
+                    startContainer.classList.add('hidden');
+                    resumeContainer.classList.remove('hidden');
+                    resumeBtn.textContent = `Resume (${saved.index + 1}/${papers.length})`;
+                } else {
+                    clearProgress();
+                    startContainer.classList.remove('hidden');
+                    resumeContainer.classList.add('hidden');
+                }
+            } catch (e) {
+                clearProgress();
+                startContainer.classList.remove('hidden');
+                resumeContainer.classList.add('hidden');
+            }
+        }
+
+        function saveProgress() {
+            if (!datasetVersion) return;
+            const data = {
+                version: datasetVersion,
+                index: currentIndex,
+                timeLeft: totalTimeRemaining,
+                secPerPaper: secondsPerPaper,
+                timeLeftInPaper: timeRemainingInPaper
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        function clearProgress() {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+
+        function filterPapers() {
+            if (allPapers.length === 0) return [];
+
+            let maxTime = 0;
+            allPapers.forEach(p => {
+                const t = new Date(p.updated_date).getTime();
+                if (!isNaN(t) && t > maxTime) maxTime = t;
+            });
+
+            if (maxTime === 0) return allPapers;
+
+            const oneDay = 24 * 60 * 60 * 1000;
+            const startTime = maxTime - (6 * oneDay);
+            const startStr = new Date(startTime).toISOString().split('T')[0];
+
+            return allPapers.filter(p => {
+                if (!p.date || p.date < startStr) return false;
+                return true;
+            });
+        }
+
+        function initSession(isResume) {
+            if (papers.length === 0) {
+                alert("No papers match criteria!");
+                return;
+            }
+
+            if (isResume) {
+                const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                currentIndex = saved.index;
+                totalTimeRemaining = saved.timeLeft;
+                secondsPerPaper = saved.secPerPaper;
+                timeRemainingInPaper = saved.timeLeftInPaper || secondsPerPaper;
+                lastDisplayedIndex = currentIndex;
+            } else {
+                const mins = parseInt(minutesInput.value) || 1;
+                totalTimeRemaining = mins * 60;
+                secondsPerPaper = parseFloat((totalTimeRemaining / papers.length).toFixed(1));
+                currentIndex = 0;
+                timeRemainingInPaper = secondsPerPaper;
+                lastDisplayedIndex = -1;
+            }
+
+            setupScreen.style.display = 'none';
+            viewerScreen.style.display = 'flex';
+            
+            showPaper(currentIndex);
+            startTimer();
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            initSession(false);
+        });
+
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            clearProgress();
+            checkProgress();
+        });
+
+        document.getElementById('resume-btn').addEventListener('click', () => {
+            initSession(true);
+        });
+
+        function showPaper(index) {
+            if (index < 0) index = 0;
+            if (index >= papers.length) {
+                alert("You've caught up on all papers!");
+                clearProgress();
+                exit();
+                return;
+            }
+            
+            currentIndex = index;
+            const paper = papers[currentIndex];
+            
+            document.getElementById('display-title').textContent = paper.title;
+            
+            const formattedAuthors = paper.creators.map(author => {
+                if (author.includes(',')) {
+                    const [surname, firstname] = author.split(',').map(s => s.trim());
+                    return `${firstname} ${surname}`;
+                }
+                return author;
+            });
+
+            let authorsText = '';
+            if (formattedAuthors.length > 0) {
+                authorsText = formattedAuthors[0];
+                for (let i = 1; i < formattedAuthors.length; i++) {
+                    const current = formattedAuthors[i];
+                    const prev = formattedAuthors[i-1];
+                    if (current === ':') {
+                        authorsText += ':';
+                    } else if (prev === ':') {
+                        authorsText += ' ' + current;
+                    } else {
+                        authorsText += ', ' + current;
+                    }
+                }
+            }
+            document.getElementById('display-authors').textContent = authorsText;
+            document.getElementById('display-abstract').textContent = paper.description;
+            document.getElementById('display-date').textContent = paper.date;
+            
+            const updatedEl = document.getElementById('display-updated');
+            updatedEl.textContent = '';
+            
+            if (paper.date && paper.updated_date) {
+                const pubDate = new Date(paper.date);
+                const upDate = new Date(paper.updated_date);
+                const diffTime = Math.abs(upDate - pubDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                
+                if (diffDays > 4) {
+                    updatedEl.textContent = `(Updated: ${paper.updated_date})`;
+                }
+            }
+
+            document.getElementById('display-link').href = paper.identifier;
+            
+            paperCounterEl.textContent = `${currentIndex + 1}/${papers.length}`;
+            
+            if (lastDisplayedIndex !== currentIndex) {
+                const drift = timeRemainingInPaper < 0 ? timeRemainingInPaper : 0;
+                timeRemainingInPaper = secondsPerPaper + drift;
+                lastDisplayedIndex = currentIndex;
+            }
+            
+            document.querySelector('.paper-container').scrollTop = 0;
+
+            if (window.MathJax) {
+                MathJax.typesetPromise([
+                    document.getElementById('display-title'),
+                    document.getElementById('display-abstract')
+                ]).catch(err => console.log('MathJax error:', err));
+            }
+            
+            updateUI();
+        }
+
+        function startTimer() {
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(() => {
+                if (isPaused) return;
+
+                timeRemainingInPaper -= 0.1;
+                totalTimeRemaining -= 0.1;
+
+                updateUI();
+
+                if (timeRemainingInPaper <= -0.01) {
+                    showPaper(currentIndex + 1);
+                }
+                
+                if (totalTimeRemaining <= 0) {
+                    clearInterval(intervalId);
+                    clearProgress();
+                    alert("Time's up! Hope you're caught up.");
+                    exit();
+                }
+            }, 100);
+        }
+
+        function updateUI() {
+            let paperProgress = ((secondsPerPaper - timeRemainingInPaper) / secondsPerPaper) * 100;
+            paperProgress = Math.min(paperProgress, 100);
+            document.getElementById('progress-bar').style.width = paperProgress + '%';
+            
+            const m = Math.max(0, Math.floor(totalTimeRemaining / 60));
+            const s = Math.max(0, Math.floor(totalTimeRemaining % 60));
+            document.getElementById('timer-countdown').textContent = 
+                `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        const pauseBtn = document.getElementById('pause-btn');
+        pauseBtn.addEventListener('click', () => {
+            isPaused = !isPaused;
+            if (isPaused) {
+                pauseBtn.textContent = 'Play';
+                pauseBtn.className = 'btn btn-success';
+            } else {
+                pauseBtn.textContent = 'Pause';
+                pauseBtn.className = 'btn btn-primary';
+            }
+        });
+
+        document.getElementById('next-btn').addEventListener('click', () => {
+            showPaper(currentIndex + 1);
+        });
+
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            showPaper(currentIndex - 1);
+        });
+
+        document.getElementById('exit-btn').addEventListener('click', () => {
+            saveProgress();
+            exit();
+        });
+
+        function exit() {
+            clearInterval(intervalId);
+            viewerScreen.style.display = 'none';
+            setupScreen.style.display = 'block';
+            checkProgress(); 
+        }
+    </script>
+</body>
+</html>
