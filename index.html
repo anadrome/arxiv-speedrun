@@ -349,8 +349,8 @@
 
         <div class="controls-wrapper">
             <div class="controls">
-                <button id="prev-btn" class="btn btn-outline">⏮</button>
                 <button id="pause-btn" class="btn btn-primary">Pause</button>
+                <button id="prev-btn" class="btn btn-outline">⏮</button>
                 <button id="next-btn" class="btn btn-outline">⏭</button>
                 <div class="timer-display">
                     <span id="paper-counter">0/0</span>
@@ -374,6 +374,7 @@
         let totalTimeRemaining = 0;
         let datasetVersion = '';
         let lastDisplayedIndex = -1;
+        let furthestIndexReached = 0;
 
         const setupScreen = document.getElementById('setup-screen');
         const viewerScreen = document.getElementById('viewer-screen');
@@ -437,7 +438,8 @@
                 index: currentIndex,
                 timeLeft: totalTimeRemaining,
                 secPerPaper: secondsPerPaper,
-                timeLeftInPaper: timeRemainingInPaper
+                timeLeftInPaper: timeRemainingInPaper,
+                furthest: furthestIndexReached
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         }
@@ -481,6 +483,7 @@
                 totalTimeRemaining = saved.timeLeft;
                 secondsPerPaper = saved.secPerPaper;
                 timeRemainingInPaper = saved.timeLeftInPaper || secondsPerPaper;
+                furthestIndexReached = saved.furthest || currentIndex;
                 lastDisplayedIndex = currentIndex;
             } else {
                 const mins = parseInt(minutesInput.value) || 1;
@@ -488,6 +491,7 @@
                 secondsPerPaper = parseFloat((totalTimeRemaining / papers.length).toFixed(1));
                 currentIndex = 0;
                 timeRemainingInPaper = secondsPerPaper;
+                furthestIndexReached = 0;
                 lastDisplayedIndex = -1;
             }
 
@@ -521,6 +525,14 @@
             }
             
             currentIndex = index;
+            furthestIndexReached = Math.max(furthestIndexReached, currentIndex);
+
+            // Pause when user navigates back
+            if (currentIndex < furthestIndexReached) {
+                isPaused = true;
+            }
+            updatePauseButton(isPaused);
+
             const paper = papers[currentIndex];
             
             document.getElementById('display-title').textContent = paper.title;
@@ -618,16 +630,32 @@
                 `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }
 
+        function updatePauseButton(paused) {
+            const btn = document.getElementById('pause-btn');
+            if (paused) {
+                if (currentIndex < furthestIndexReached) {
+                    btn.textContent = 'Resume (from last viewed)';
+                } else {
+                    btn.textContent = 'Resume';
+                }
+                btn.className = 'btn btn-success';
+            } else {
+                btn.textContent = 'Pause';
+                btn.className = 'btn btn-primary';
+            }
+        }
+
         const pauseBtn = document.getElementById('pause-btn');
         pauseBtn.addEventListener('click', () => {
-            isPaused = !isPaused;
-            if (isPaused) {
-                pauseBtn.textContent = 'Play';
-                pauseBtn.className = 'btn btn-success';
+            if (currentIndex < furthestIndexReached) {
+                // If user clicked back: Jump to furthest and resume
+                showPaper(furthestIndexReached);
+                isPaused = false;
             } else {
-                pauseBtn.textContent = 'Pause';
-                pauseBtn.className = 'btn btn-primary';
+                // Normal toggle
+                isPaused = !isPaused;
             }
+            updatePauseButton(isPaused);
         });
 
         document.getElementById('next-btn').addEventListener('click', () => {
