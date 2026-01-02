@@ -31,6 +31,7 @@
             font-family: var(--font-stack);
             margin: 0;
             height: 100vh;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -270,6 +271,54 @@
 
         /* Utility */
         .hidden { display: none !important; }
+
+        /* Mobile Optimizations */
+        @media (max-width: 640px) {
+            /* Hide categories */
+            #display-categories {
+                display: none !important;
+            }
+
+            /* Dock controls to bottom */
+            .controls-wrapper {
+                bottom: 0;
+                padding: 0;
+                z-index: 50;
+            }
+            .controls {
+                width: 100%;
+                border-radius: 0;
+                border: none;
+                border-top: 1px solid var(--border-color);
+                justify-content: space-between;
+                padding: 0.75rem 1rem;
+                padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+                background: var(--surface-color);
+                gap: 0.5rem;
+            }
+
+            /* Ensure content isn't hidden behind controls */
+            .paper-container {
+                padding: 0;
+                padding-bottom: 100px;
+            }
+
+            .paper-card {
+                padding: 1.5rem;
+                margin-bottom: 0;
+                border-radius: 0;
+                box-shadow: none;
+                border: none;
+            }
+
+            /* Adjust typography */
+            .paper-title { font-size: 1.5rem; }
+
+            /* Compact buttons */
+            .btn { padding: 0.5rem; }
+            #pause-btn { min-width: 60px; }
+            .timer-display { min-width: auto; font-size: 0.9rem; }
+        }
     </style>
 </head>
 <body>
