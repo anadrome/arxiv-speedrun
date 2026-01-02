@@ -342,6 +342,13 @@
                 <button id="clear-btn" class="btn btn-danger btn-sm w-100" style="margin-top: 0.5rem">Clear Progress</button>
             </div>
 
+            <div class="text-center" style="margin-top: 1.5rem;">
+                <label style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; color: var(--text-secondary); font-weight: 500;">
+                    <input type="checkbox" id="fast-mode-checkbox" style="width: 1.2rem; height: 1.2rem; accent-color: var(--accent-color);">
+                    I only have 10 minutes actually
+                </label>
+            </div>
+
             <details>
                 <summary>FAQ</summary>
                 <div class="faq-content">
@@ -427,6 +434,16 @@
         const startContainer = document.getElementById('start-container');
         const resumeContainer = document.getElementById('resume-container');
         const resumeBtn = document.getElementById('resume-btn');
+        const fastModeCheckbox = document.getElementById('fast-mode-checkbox');
+
+        function updateTimeEstimate() {
+            if (papers.length === 0) return;
+            const totalSeconds = fastModeCheckbox.checked ? 600 : 1800;
+            const avgTime = (totalSeconds / papers.length).toFixed(1);
+            document.getElementById('faq-time-per-paper').textContent = `Don't preprints deserve more than ${avgTime} seconds each?`;
+        }
+
+        fastModeCheckbox.addEventListener('change', updateTimeEstimate);
 
         fetch('arxiv_recent_csAILG.json')
             .then(r => r.json())
@@ -435,8 +452,7 @@
                 papers = filterPapers();
 
                 if (papers.length > 0) {
-                    const avgTime = (1800 / papers.length).toFixed(1);
-                    document.getElementById('faq-time-per-paper').textContent = `Don't preprints deserve more than ${avgTime} seconds each?`;
+                    updateTimeEstimate();
 
                     const dates = papers.map(p => p.date).sort().reverse();
                     datasetVersion = dates[0];
@@ -521,7 +537,10 @@
                 furthestIndexReached = saved.furthest || currentIndex;
                 lastDisplayedIndex = currentIndex;
             } else {
-                const mins = parseInt(minutesInput.value) || 1;
+                let mins = parseInt(minutesInput.value) || 1;
+                if (document.getElementById('fast-mode-checkbox').checked) {
+                    mins = 10;
+                }
                 totalTimeRemaining = mins * 60;
                 secondsPerPaper = parseFloat((totalTimeRemaining / papers.length).toFixed(1));
                 currentIndex = 0;
